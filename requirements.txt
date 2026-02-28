@@ -1,0 +1,5 @@
+delta-rest-client
+pandas
+pandas_ta
+python-dotenv
+requests

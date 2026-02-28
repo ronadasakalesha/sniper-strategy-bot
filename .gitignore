@@ -1,0 +1,11 @@
+.env
+bot_state.json
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+.gemini/
+.agents/
+.agent/
+_agents/
+_agent/
