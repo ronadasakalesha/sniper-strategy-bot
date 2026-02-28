@@ -5,12 +5,12 @@ from datetime import datetime
 from dotenv import load_dotenv
 from delta_client import DeltaClient
 from strategy import Strategy
+from telegram_bot import TelegramBot
 
 load_dotenv()
 
 # Configuration
 SYMBOL = os.getenv("SYMBOL", "BTCINR")
-QUANTITY = float(os.getenv("QUANTITY", "0.001"))
 CHECK_INTERVAL = 60  # seconds
 
 STATE_FILE = "bot_state.json"
@@ -26,10 +26,14 @@ def save_state(state):
         json.dump(state, f)
 
 def main():
-    print(f"Starting Delta India SniperX Bot for {SYMBOL}...")
+    print(f"Starting Delta India SniperX Telegram Bot for {SYMBOL}...")
     client = DeltaClient()
     strategy = Strategy(SYMBOL)
+    telegram = TelegramBot()
     state = load_state()
+
+    # Send startup notification
+    telegram.send_message(f"🤖 *SniperX Bot Started*\nMonitoring: `{SYMBOL}`\nTimeframe: `12h`")
 
     while True:
         try:
@@ -46,21 +50,21 @@ def main():
 
             # 3. Decision Logic
             if signal != 'hold' and current_timestamp != state.get("last_timestamp"):
-                print(f"[{datetime.now()}] New Signal: {signal.upper()} at {last_row['close']}")
+                price = last_row['close']
+                print(f"[{datetime.now()}] New Signal: {signal.upper()} at {price}")
                 
-                # Execute Trade
-                side = "buy" if signal == "buy" else "sell"
-                response = client.place_order(SYMBOL, side, "market", QUANTITY)
+                # Send Telegram Alert
+                success = telegram.send_signal(SYMBOL, signal, price)
                 
-                if response:
-                    print(f"Order successful: {response}")
+                if success:
+                    print(f"Telegram alert sent: {signal}")
                     state["last_signal"] = signal
                     state["last_timestamp"] = current_timestamp
                     save_state(state)
                 else:
-                    print("Order failed.")
+                    print("Failed to send Telegram alert.")
             else:
-                # print(f"[{datetime.now()}] No new signal. Last: {state.get('last_signal')}")
+                # print(f"[{datetime.now()}] No new signal.")
                 pass
 
         except Exception as e:
